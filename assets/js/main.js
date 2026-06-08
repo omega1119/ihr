@@ -44,106 +44,133 @@
     return;
   }
 
-  const fallbackPosts = [
-    {
-      title: 'Follow @vosforisofficial on Instagram',
-      url: 'https://www.instagram.com/vosforisofficial/'
-    },
-    {
-      title: 'Watch: Decoherence Lyric Video',
-      url: 'https://www.youtube.com/watch?v=hMjrpQq2tEE'
-    },
-    {
-      title: 'Listen: Cosmic Cenotaph',
-      url: 'https://vosforis.bandcamp.com/album/cosmic-cenotaph'
-    }
-  ];
+  const BEHOLD_FEED_URL = 'https://feeds.behold.so/gyBRr7hGsNpXajj6h7E4';
+  const MAX_POSTS = 9;
 
-  function renderPosts(posts, withDate) {
-    feedContainer.innerHTML = '';
-
-    posts.forEach(function (post) {
-      const article = document.createElement('article');
-      article.className = 'card feed-item';
-
-      const title = document.createElement('h3');
-      title.textContent = post.title;
-
-      article.appendChild(title);
-
-      if (withDate && post.date) {
-        const time = document.createElement('time');
-        const d = new Date(post.date);
-        time.dateTime = d.toISOString();
-        time.textContent = d.toLocaleDateString(undefined, {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric'
-        });
-        article.appendChild(time);
-      }
-
-      const link = document.createElement('a');
-      link.className = 'text-link';
-      link.href = post.url;
-      link.target = '_blank';
-      link.rel = 'noopener noreferrer';
-      link.textContent = 'Open Post';
-
-      article.appendChild(link);
-      feedContainer.appendChild(article);
+  function formatDate(value) {
+    if (!value) return '';
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return '';
+    return d.toLocaleDateString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
     });
   }
 
-  function parseRss(xmlText) {
-    const parser = new DOMParser();
-    const xml = parser.parseFromString(xmlText, 'text/xml');
-    const items = Array.from(xml.querySelectorAll('item')).slice(0, 6);
+  function pickThumbnail(post) {
+    const sizes = post.sizes || {};
+    const medium = sizes.medium && sizes.medium.mediaUrl;
+    const small = sizes.small && sizes.small.mediaUrl;
+    const large = sizes.large && sizes.large.mediaUrl;
+    if (medium) return medium;
+    if (small) return small;
+    if (large) return large;
+    if (post.mediaType === 'VIDEO' && post.thumbnailUrl) return post.thumbnailUrl;
+    return post.mediaUrl || '';
+  }
 
-    return items
-      .map(function (item) {
-        const title = (item.querySelector('title') || {}).textContent || '';
-        const link = (item.querySelector('link') || {}).textContent || '';
-        const pubDate = (item.querySelector('pubDate') || {}).textContent || '';
+  function renderPosts(posts) {
+    feedContainer.innerHTML = '';
 
-        if (!title || !link) {
-          return null;
-        }
+    if (!posts.length) {
+      renderEmpty();
+      return;
+    }
 
-        return {
-          title: title.replace(/^\s*\[[^\]]+\]\s*/, '').trim(),
-          url: link.trim(),
-          date: pubDate.trim()
-        };
-      })
-      .filter(Boolean);
+    posts.forEach(function (post) {
+      const a = document.createElement('a');
+      a.className = 'feed-tile';
+      a.href = post.permalink || 'https://www.instagram.com/vosforisofficial/';
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+
+      const thumb = pickThumbnail(post);
+      if (thumb) {
+        const img = document.createElement('img');
+        img.className = 'feed-tile__image';
+        img.src = thumb;
+        img.alt = (post.prunedCaption || '').slice(0, 120);
+        img.loading = 'lazy';
+        a.appendChild(img);
+      }
+
+      if (post.mediaType === 'VIDEO' || post.isReel) {
+        const badge = document.createElement('span');
+        badge.className = 'feed-tile__badge';
+        badge.textContent = post.isReel ? 'Reel' : 'Video';
+        a.appendChild(badge);
+      } else if (post.mediaType === 'CAROUSEL_ALBUM') {
+        const badge = document.createElement('span');
+        badge.className = 'feed-tile__badge';
+        badge.textContent = 'Album';
+        a.appendChild(badge);
+      }
+
+      const overlay = document.createElement('div');
+      overlay.className = 'feed-tile__overlay';
+
+      if (post.timestamp) {
+        const time = document.createElement('time');
+        time.className = 'feed-tile__date';
+        time.dateTime = post.timestamp;
+        time.textContent = formatDate(post.timestamp);
+        overlay.appendChild(time);
+      }
+
+      const caption = post.prunedCaption || post.caption || '';
+      if (caption) {
+        const p = document.createElement('p');
+        p.className = 'feed-tile__caption';
+        p.textContent = caption.length > 110 ? caption.slice(0, 107) + '...' : caption;
+        overlay.appendChild(p);
+      }
+
+      a.appendChild(overlay);
+      feedContainer.appendChild(a);
+    });
+  }
+
+  function renderEmpty() {
+    feedContainer.innerHTML = '';
+    const a = document.createElement('a');
+    a.className = 'feed-tile feed-tile--empty';
+    a.href = 'https://www.instagram.com/vosforisofficial/';
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.innerHTML =
+      '<div class="feed-tile__overlay"><p class="feed-tile__caption">Open Instagram Profile</p></div>';
+    feedContainer.appendChild(a);
+  }
+
+  function renderLoading() {
+    feedContainer.innerHTML = '';
+    for (let i = 0; i < 6; i++) {
+      const div = document.createElement('div');
+      div.className = 'feed-tile feed-tile--skeleton';
+      feedContainer.appendChild(div);
+    }
   }
 
   async function loadInstagramFeed() {
-    const baseFeed = 'https://rsshub.app/instagram/user/vosforisofficial';
-    const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(baseFeed);
+    renderLoading();
 
     const controller = new AbortController();
     const timeout = setTimeout(function () {
       controller.abort();
-    }, 7000);
+    }, 8000);
 
     try {
-      const response = await fetch(proxyUrl, { signal: controller.signal });
+      const response = await fetch(BEHOLD_FEED_URL, { signal: controller.signal });
       if (!response.ok) {
-        throw new Error('Feed request failed');
+        throw new Error('Feed request failed: ' + response.status);
       }
 
-      const xmlText = await response.text();
-      const posts = parseRss(xmlText);
-
-      if (!posts.length) {
-        throw new Error('No posts available');
-      }
-
-      renderPosts(posts, true);
+      const data = await response.json();
+      const posts = Array.isArray(data.posts) ? data.posts.slice(0, MAX_POSTS) : [];
+      renderPosts(posts);
     } catch (_error) {
-      renderPosts(fallbackPosts, false);
+      renderEmpty();
     } finally {
       clearTimeout(timeout);
     }

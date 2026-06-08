@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" fill="#050505"/>
+  <text x="32" y="46"
+        font-family="'Times New Roman', Georgia, serif"
+        font-weight="900"
+        font-size="38"
+        text-anchor="middle"
+        letter-spacing="-1">
+    <tspan fill="#d31919">IH</tspan><tspan fill="#f2f2f2">R</tspan>
+  </text>
+</svg>

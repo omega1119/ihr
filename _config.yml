@@ -1,3 +1,13 @@
 title: Inner Hell Records
+description: London-based extreme metal label. Home of Vosforis and the debut album Cosmic Cenotaph - 180g vinyl, digital, and streaming.
 url: https://innerhellrecords.co.uk
+author: Inner Hell Records
+lang: en-GB
 markdown: kramdown
+
+# Files at the site root that should be served verbatim (not processed by Jekyll)
+include:
+  - robots.txt
+  - sitemap.xml
+  - llms.txt
+  - CNAME
