@@ -16,6 +16,74 @@
     });
   }
 
+  // ── Cookie Consent Injector ──────────────────────────────
+  // Usage: <body data-cookie-consent>
+  function initCookieConsent() {
+    if (!document.body || !document.body.hasAttribute('data-cookie-consent')) return;
+
+    // Avoid double-injecting if the script runs more than once.
+    if (document.querySelector('.cookie-consent')) return;
+
+    // Resolve a root-relative privacy link so it works from any page depth.
+    const privacyHref = '/privacy.html';
+
+    const banner = document.createElement('div');
+    banner.className = 'cookie-consent';
+    banner.setAttribute('role', 'region');
+    banner.setAttribute('aria-label', 'Cookie consent');
+    banner.innerHTML =
+      '<div class="cookie-consent__content">' +
+        '<div class="cookie-consent__text">' +
+          'We use cookies to analyse site traffic and improve your experience. ' +
+          'By clicking "Accept", you consent to our use of cookies. ' +
+          '<a href="' + privacyHref + '">Privacy Policy</a>' +
+        '</div>' +
+        '<div class="cookie-consent__buttons">' +
+          '<button type="button" class="cookie-consent__btn cookie-consent__btn--accept">Accept</button>' +
+          '<button type="button" class="cookie-consent__btn cookie-consent__btn--deny">Deny</button>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(banner);
+
+    const acceptBtn = banner.querySelector('.cookie-consent__btn--accept');
+    const denyBtn = banner.querySelector('.cookie-consent__btn--deny');
+    const consent = (function () {
+      try { return localStorage.getItem('cookieConsent'); } catch (_) { return null; }
+    })();
+
+    if (!consent) {
+      banner.classList.add('show');
+    } else if (consent === 'accepted') {
+      enableAnalytics();
+    }
+
+    acceptBtn.addEventListener('click', function () {
+      try { localStorage.setItem('cookieConsent', 'accepted'); } catch (_) { /* ignore */ }
+      banner.classList.remove('show');
+      enableAnalytics();
+    });
+
+    denyBtn.addEventListener('click', function () {
+      try { localStorage.setItem('cookieConsent', 'denied'); } catch (_) { /* ignore */ }
+      banner.classList.remove('show');
+      disableAnalytics();
+    });
+  }
+
+  function enableAnalytics() {
+    if (typeof window.gtag === 'function') {
+      window.gtag('consent', 'update', { analytics_storage: 'granted' });
+    }
+  }
+
+  function disableAnalytics() {
+    if (typeof window.gtag === 'function') {
+      window.gtag('consent', 'update', { analytics_storage: 'denied' });
+    }
+  }
+
+  initCookieConsent();
+
   const revealNodes = document.querySelectorAll('.reveal');
   if ('IntersectionObserver' in window && revealNodes.length) {
     const observer = new IntersectionObserver(
