@@ -34,9 +34,9 @@
     banner.innerHTML =
       '<div class="cookie-consent__content">' +
         '<div class="cookie-consent__text">' +
-          'We use cookies to analyse site traffic and improve your experience. ' +
-          'By clicking "Accept", you consent to our use of cookies. ' +
-          '<a href="' + privacyHref + '">Privacy Policy</a>' +
+          'We use cookies to analyse site traffic. ' +
+          'Click "Accept" to allow them. ' +
+          '<a href="' + privacyHref + '">Privacy policy</a>' +
         '</div>' +
         '<div class="cookie-consent__buttons">' +
           '<button type="button" class="cookie-consent__btn cookie-consent__btn--accept">Accept</button>' +
@@ -207,7 +207,7 @@
     a.target = '_blank';
     a.rel = 'noopener noreferrer';
     a.innerHTML =
-      '<div class="feed-tile__overlay"><p class="feed-tile__caption">Open Instagram Profile</p></div>';
+      '<div class="feed-tile__overlay"><p class="feed-tile__caption">Open Instagram profile</p></div>';
     feedContainer.appendChild(a);
   }
 
